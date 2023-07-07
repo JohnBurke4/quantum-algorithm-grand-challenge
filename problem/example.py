@@ -1,23 +1,23 @@
+
 import sys
-from typing import Any
+# sys.path.append(
+#     "/Users/johnburke/Documents/GitHub/quantum-algorithm-grand-challenge/")
 
-import numpy as np
-from openfermion.transforms import jordan_wigner
-from openfermion.utils import load_operator
-
-from quri_parts.algo.ansatz import HardwareEfficientReal
-from quri_parts.algo.optimizer import Adam, OptimizerStatus
-from quri_parts.circuit import LinearMappedUnboundParametricQuantumCircuit
-from quri_parts.core.estimator.gradient import parameter_shift_gradient_estimates
-from quri_parts.core.measurement import bitwise_commuting_pauli_measurement
+from utils.challenge_2023 import ChallengeSampling, TimeExceededError
+from quri_parts.openfermion.operator import operator_from_openfermion_op
+from quri_parts.core.state import ParametricCircuitQuantumState, ComputationalBasisState
 from quri_parts.core.sampling.shots_allocator import (
     create_equipartition_shots_allocator,
 )
-from quri_parts.core.state import ParametricCircuitQuantumState, ComputationalBasisState
-from quri_parts.openfermion.operator import operator_from_openfermion_op
-
-sys.path.append("../")
-from utils.challenge_2023 import ChallengeSampling, TimeExceededError
+from quri_parts.core.measurement import bitwise_commuting_pauli_measurement
+from quri_parts.core.estimator.gradient import parameter_shift_gradient_estimates
+from quri_parts.circuit import LinearMappedUnboundParametricQuantumCircuit
+from quri_parts.algo.optimizer import AdaBelief, OptimizerStatus
+from quri_parts.algo.ansatz import HardwareEfficientReal
+from openfermion.utils import load_operator
+from openfermion.transforms import jordan_wigner
+import numpy as np
+from typing import Any
 
 
 """
@@ -84,8 +84,10 @@ class RunAlgorithm:
         hamiltonian = operator_from_openfermion_op(jw_hamiltonian)
 
         # make hf + HEreal ansatz
-        hf_gates = ComputationalBasisState(n_qubits, bits=0b00001111).circuit.gates
-        hf_circuit = LinearMappedUnboundParametricQuantumCircuit(n_qubits).combine(hf_gates)
+        hf_gates = ComputationalBasisState(
+            n_qubits, bits=0b00001111).circuit.gates
+        hf_circuit = LinearMappedUnboundParametricQuantumCircuit(
+            n_qubits).combine(hf_gates)
         hw_ansatz = HardwareEfficientReal(qubit_count=n_qubits, reps=1)
         hf_circuit.extend(hw_ansatz)
 
@@ -102,9 +104,10 @@ class RunAlgorithm:
             )
         )
 
-        adam_optimizer = Adam(ftol=10e-5)
+        adam_optimizer = AdaBelief(ftol=10e-5)
 
-        init_param = np.random.rand(hw_ansatz.parameter_count) * 2 * np.pi * 0.001
+        init_param = np.random.rand(
+            hw_ansatz.parameter_count) * 2 * np.pi * 0.001
 
         result = vqe(
             hamiltonian,
@@ -118,5 +121,7 @@ class RunAlgorithm:
 
 
 if __name__ == "__main__":
+    import os
+    print(os.getcwd())
     run_algorithm = RunAlgorithm()
     print(run_algorithm.get_result())
